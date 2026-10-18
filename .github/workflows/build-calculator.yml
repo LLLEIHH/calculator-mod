@@ -1,7 +1,8 @@
 name: Build Calculator (x64)
 
-# 本机缺少 VS 的 UWP 工作负载时，可用 GitHub Actions 的 windows-2022 运行器编译：
-# 该镜像自带 VS2022 + 「通用 Windows 平台开发」工作负载，无需本地安装任何东西。
+# 本机缺少 VS 的 UWP 工作负载时，可用 GitHub Actions 托管运行器编译。
+# 注意：仓库的 C++ 项目要求 PlatformToolset=v145（VS 2026），
+# 因此必须用 windows-2025-vs2026 镜像，windows-2022（v143）会报 MSB8020。
 
 on:
   workflow_dispatch:
@@ -10,7 +11,9 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2022
+    # 上游 C++ 项目固定使用 PlatformToolset=v145（VS 2026 工具集），
+    # windows-2022 只有 v143，会报 MSB8020，必须用带 VS2026 的镜像。
+    runs-on: windows-2025-vs2026
 
     steps:
       - name: Checkout
