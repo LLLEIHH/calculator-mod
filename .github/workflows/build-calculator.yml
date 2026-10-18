@@ -14,29 +14,56 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
       - name: Restore NuGet packages
+        shell: cmd
         run: msbuild src\Calculator\Calculator.csproj /t:Restore /p:Configuration=Release /p:Platform=x64
 
       - name: Build Calculator (Release x64)
-        run: >
-          msbuild src\Calculator\Calculator.csproj
-          /p:Configuration=Release
-          /p:Platform=x64
-          /p:AppxBundle=Never
-          /p:UapAppxPackageBuildMode=SideloadOnly
-          /p:AppxPackageSigningEnabled=false
-          /m
+        id: build
+        shell: cmd
+        continue-on-error: true
+        run: msbuild src\Calculator\Calculator.csproj /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxPackageSigningEnabled=false /m /flp:LogFile=build.log;Verbosity=Normal
+
+      - name: 提取编译错误
+        if: always()
+        shell: pwsh
+        run: |
+          if (-not (Test-Path build.log)) {
+            Write-Host "未找到 build.log"
+            exit 0
+          }
+          $errs = Select-String -Path build.log -Pattern ':\s*error\s' | Select-Object -First 40
+          if ($errs) {
+            $errs | ForEach-Object { Write-Host ("::error::" + $_.Line.Trim()) }
+          } else {
+            Write-Host "build.log 里没有 error 行"
+          }
+          Write-Host "==== 日志末尾 40 行 ===="
+          Get-Content build.log -Tail 40 | ForEach-Object { Write-Host $_ }
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        if: steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v5
         with:
           name: Calculator-x64-Release
           path: |
             src\Calculator\AppPackages\**
           if-no-files-found: warn
-# 说明：仓库首次推送后若未自动调度，可在 Actions 页面点 “Run workflow” 手动触发。
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
+
+      - name: 失败即中断
+        if: steps.build.outcome == 'failure'
+        shell: cmd
+        run: exit 1
