@@ -39,3 +39,4 @@ jobs:
           path: |
             src\Calculator\AppPackages\**
           if-no-files-found: warn
+# 说明：仓库首次推送后若未自动调度，可在 Actions 页面点 “Run workflow” 手动触发。
