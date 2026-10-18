@@ -30,7 +30,9 @@ jobs:
         id: build
         shell: cmd
         continue-on-error: true
-        run: msbuild src\Calculator\Calculator.csproj /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxPackageSigningEnabled=false /m /flp:LogFile=build.log;Verbosity=Normal
+        # UseDotNetNativeToolchain=false：.NET Native 工具链在托管镜像上不一定存在，
+        # 关掉后走 CoreCLR（与 VS 的 Debug 部署一致），产物依然可安装运行。
+        run: msbuild src\Calculator\Calculator.csproj /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxPackageSigningEnabled=false /p:UseDotNetNativeToolchain=false /m /flp:LogFile=build.log;Verbosity=Normal
 
       - name: 提取编译错误
         if: always()
