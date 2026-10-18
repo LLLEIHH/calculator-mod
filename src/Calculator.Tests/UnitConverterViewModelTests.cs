@@ -380,17 +380,25 @@ namespace Calculator.Tests
                 category => category.GetModelCategoryId() == currencyId);
             await WaitForCurrencyUnitsAsync(viewModel);
 
-            Unit mars = viewModel.Units.First(unit => unit.Abbreviation == "MAR");
-            Unit moon = viewModel.Units.First(unit => unit.Abbreviation == "MON");
-            SelectUnit(viewModel, mars, isFromUnit: true);
-            SelectUnit(viewModel, moon, isFromUnit: false);
+            Unit usd = viewModel.Units.First(unit => unit.Abbreviation == "USD");
+            Unit cny = viewModel.Units.First(unit => unit.Abbreviation == "CNY");
+            SelectUnit(viewModel, usd, isFromUnit: true);
+            SelectUnit(viewModel, cny, isFromUnit: false);
 
             viewModel.ButtonPressedCommand.Execute(NumbersAndOperatorsEnum.One);
             viewModel.ButtonPressedCommand.Execute(NumbersAndOperatorsEnum.Zero);
             viewModel.ButtonPressedCommand.Execute(NumbersAndOperatorsEnum.Zero);
 
             Assert.AreEqual("100", viewModel.Value1);
-            Assert.AreEqual("50", viewModel.Value2);
+
+            // 汇率来自实时数据（离线时为内置快照），数值会随时间变化，
+            // 这里只校验「已套用加载到的比率」这一行为。
+            double converted;
+            Assert.IsTrue(
+                double.TryParse(viewModel.Value2, NumberStyles.Any, CultureInfo.CurrentCulture, out converted),
+                "换算结果应为数值，实际为：" + viewModel.Value2);
+            Assert.IsTrue(converted > 0, "换算结果应大于 0，实际为：" + viewModel.Value2);
+            Assert.AreNotEqual(100d, converted, "未套用汇率，结果与输入相同：" + viewModel.Value2);
         }
 
         [TestMethod]
@@ -404,17 +412,25 @@ namespace Calculator.Tests
 
             await WaitForCurrencyUnitsAsync(viewModel);
 
-            Unit mars = viewModel.Units.First(unit => unit.Abbreviation == "MAR");
-            Unit moon = viewModel.Units.First(unit => unit.Abbreviation == "MON");
-            SelectUnit(viewModel, mars, isFromUnit: true);
-            SelectUnit(viewModel, moon, isFromUnit: false);
+            Unit usd = viewModel.Units.First(unit => unit.Abbreviation == "USD");
+            Unit cny = viewModel.Units.First(unit => unit.Abbreviation == "CNY");
+            SelectUnit(viewModel, usd, isFromUnit: true);
+            SelectUnit(viewModel, cny, isFromUnit: false);
 
             viewModel.ButtonPressedCommand.Execute(NumbersAndOperatorsEnum.One);
             viewModel.ButtonPressedCommand.Execute(NumbersAndOperatorsEnum.Zero);
             viewModel.ButtonPressedCommand.Execute(NumbersAndOperatorsEnum.Zero);
 
             Assert.AreEqual("100", viewModel.Value1);
-            Assert.AreEqual("50", viewModel.Value2);
+
+            // 汇率来自实时数据（离线时为内置快照），数值会随时间变化，
+            // 这里只校验「已套用加载到的比率」这一行为。
+            double converted;
+            Assert.IsTrue(
+                double.TryParse(viewModel.Value2, NumberStyles.Any, CultureInfo.CurrentCulture, out converted),
+                "换算结果应为数值，实际为：" + viewModel.Value2);
+            Assert.IsTrue(converted > 0, "换算结果应大于 0，实际为：" + viewModel.Value2);
+            Assert.AreNotEqual(100d, converted, "未套用汇率，结果与输入相同：" + viewModel.Value2);
         }
 
         [TestMethod]

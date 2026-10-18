@@ -423,7 +423,7 @@ namespace CalculatorApp
         private void Popup_Closed(object sender, object e)
         {
             KeyboardShortcutManager.HonorEscape();
-            KeyboardShortcutManager.HonorShortcuts(!NavView.IsPaneOpen);
+            KeyboardShortcutManager.HonorShortcuts(NavView.DisplayMode != NavigationViewDisplayMode.Minimal || !NavView.IsPaneOpen);
         }
 
         private void OnNavSelectionChanged(object sender, NavigationViewSelectionChangedEventArgs e)
@@ -442,7 +442,11 @@ namespace CalculatorApp
 
         private void OnNavItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs e)
         {
-            NavView.IsPaneOpen = false;
+            // 左侧导航栏在常态下常驻，切换模式后不再收起；仅置顶迷你窗口的悬浮面板需要收起。
+            if (NavView.DisplayMode == NavigationViewDisplayMode.Minimal)
+            {
+                NavView.IsPaneOpen = false;
+            }
         }
 
         private void AlwaysOnTopButtonClick(object sender, RoutedEventArgs e)
@@ -673,6 +677,20 @@ namespace CalculatorApp
         private double NavigationViewOpenPaneLength(bool isAlwaysOnTop)
         {
             return isAlwaysOnTop ? 0 : (double)Application.Current.Resources["SplitViewOpenPaneLength"];
+        }
+
+        /// <summary>
+        /// 常态窗口下导航栏常驻并展开（Left），把计算器模式与转换器固定显示在主界面左侧；
+        /// 迷你置顶窗口空间有限，退回悬浮式（LeftMinimal）以免遮挡内容。
+        /// </summary>
+        private NavigationViewPaneDisplayMode NavPaneDisplayMode(bool isAlwaysOnTop)
+        {
+            return isAlwaysOnTop ? NavigationViewPaneDisplayMode.LeftMinimal : NavigationViewPaneDisplayMode.Left;
+        }
+
+        private bool ShouldNavPaneOpen(bool isAlwaysOnTop)
+        {
+            return !isAlwaysOnTop;
         }
 
         private GridLength DoubleToGridLength(double value)

@@ -1,0 +1,41 @@
+name: Build Calculator (x64)
+
+# 本机缺少 VS 的 UWP 工作负载时，可用 GitHub Actions 的 windows-2022 运行器编译：
+# 该镜像自带 VS2022 + 「通用 Windows 平台开发」工作负载，无需本地安装任何东西。
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore NuGet packages
+        run: msbuild src\Calculator\Calculator.csproj /t:Restore /p:Configuration=Release /p:Platform=x64
+
+      - name: Build Calculator (Release x64)
+        run: >
+          msbuild src\Calculator\Calculator.csproj
+          /p:Configuration=Release
+          /p:Platform=x64
+          /p:AppxBundle=Never
+          /p:UapAppxPackageBuildMode=SideloadOnly
+          /p:AppxPackageSigningEnabled=false
+          /m
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Calculator-x64-Release
+          path: |
+            src\Calculator\AppPackages\**
+          if-no-files-found: warn
