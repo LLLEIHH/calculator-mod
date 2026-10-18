@@ -24,15 +24,16 @@ jobs:
 
       - name: Restore NuGet packages
         shell: cmd
-        run: msbuild src\Calculator\Calculator.csproj /t:Restore /p:Configuration=Release /p:Platform=x64
+        run: msbuild src\Calculator\Calculator.csproj /t:Restore /p:Configuration=Release /p:Platform=x64 /p:SolutionDir=%CD%\src\
 
       - name: Build Calculator (Release x64)
         id: build
         shell: cmd
         continue-on-error: true
-        # UseDotNetNativeToolchain=false：.NET Native 工具链在托管镜像上不一定存在，
-        # 关掉后走 CoreCLR（与 VS 的 Debug 部署一致），产物依然可安装运行。
-        run: msbuild src\Calculator\Calculator.csproj /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxPackageSigningEnabled=false /p:UseDotNetNativeToolchain=false /m /flp:LogFile=build.log;Verbosity=Normal
+        # SolutionDir 必须显式传入：C++ 项目用 $(SolutionDir)CalcManager、$(SolutionDir)\GraphingInterfaces\ 找头文件，
+        # 直接编译 csproj 时该变量为空，会报 C1083 找不到 CalculatorManager.h / IGraph.h。
+        # UseDotNetNativeToolchain=false：托管镜像可能没有 .NET Native 工具链，关掉后走 CoreCLR，产物同样可安装运行。
+        run: msbuild src\Calculator\Calculator.csproj /p:Configuration=Release /p:Platform=x64 /p:SolutionDir=%CD%\src\ /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxPackageSigningEnabled=false /p:UseDotNetNativeToolchain=false /m /flp:LogFile=build.log;Verbosity=Normal
 
       - name: 提取编译错误
         if: always()
@@ -57,7 +58,7 @@ jobs:
         with:
           name: Calculator-x64-Release
           path: |
-            src\Calculator\AppPackages\**
+            **\AppPackages\**
           if-no-files-found: warn
 
       - name: Upload build log
